@@ -10,7 +10,7 @@ updatedAt: '2026-11-06'
 
 # Rebalancing Core Lightning with sling
 
-[Channel Management Best Practices](/learn/intermediate/channel-management) explains why channels drift out of balance. This guide is about one tool for fixing that on Core Lightning (CLN): [sling](https://github.com/daywalker90/sling), a plugin by daywalker90 that runs circular rebalances for you in the background. It is the successor of the older `circular` plugin and is actively maintained for current CLN releases.
+[Channel Management Best Practices](/learn/intermediate/channel-management) explains why channels drift out of balance. This guide is about one tool for fixing that on Core Lightning (CLN): [sling](https://github.com/daywalker90/sling), a plugin by daywalker90 that runs circular rebalances for you in the background. It is based on the original `circular` plugin by giovannizotta and is actively maintained for current CLN releases.
 
 A circular rebalance is a payment from your node, through the network, back to your node: sats leave through one of your channels and come back through another. You pay routing fees to the nodes in between, and your total balance stays the same minus those fees. sling automates this: you tell it which channel to fill or empty, how much you are willing to pay, and it keeps trying routes until the job is done.
 
@@ -126,9 +126,9 @@ Failed attempts cost nothing. Only successful rebalances pay fees.
 
 - **Re-running `sling-job` on an existing job stops it.** Changing a setting by running `sling-job` again leaves the job stopped until you run `sling-go <scid>`. Use `sling-jobsettings` to confirm what is active.
 - **The default `maxhops` can be too low.** Cheap routes are often long. If a job reports no routes at all, try `maxhops=10`.
-- **Excluded peers hide routes.** Peers added with `sling-except-peer add` (or channels via `sling-except-chan`) are never used, for every job. An old entry can block the cheapest path for months. Review the list with `sling-except-peer list`.
+- **Excluded peers hide routes.** Peers added with `sling-except-peer add` (or channels via `sling-except-chan`) are never used, for every job. An old entry can block the cheapest path for months. Review the list with `sling-except-peer list` and remove old entries with `sling-except-peer remove`.
 - **sling learns, and that cuts both ways.** It remembers which channels failed and what liquidity it believes is where. That avoids repeating doomed routes, but it can also make sling quote 1,000+ ppm routes while CLN's plain `getroute` still shows 50 ppm ones. The beliefs reset every 6 hours by default (`sling-reset-liquidity-interval`).
-- **Restart it properly.** Beliefs are only saved when the plugin stops cleanly: run `lightning-cli plugin stop sling` before starting it again.
+- **Restart it properly.** If you start sling while it is already running, its liquidity beliefs are not saved. Run `lightning-cli plugin stop sling` before starting it again.
 - **`sling-once` doesn't survive restarts.** A plugin or node restart forgets running one-time rebalances. Use a job if it has to keep going.
 - **Watch the source channels.** With a broad `outppm`, sling may take liquidity from a channel you care about. Use `candidates` when you know exactly where the sats should come from, and keep the deplete settings at their defaults or higher.
 
