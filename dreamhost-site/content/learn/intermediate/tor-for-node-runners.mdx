@@ -1,0 +1,123 @@
+---
+title: 'Tor for Node Runners: Clearnet, Tor or Hybrid'
+description: 'How a Lightning node can be reached over clearnet, Tor or both, what each choice means for privacy and routing, how to configure Core Lightning for each, and common pitfalls.'
+category: 'intermediate'
+tags: ['tor', 'onion', 'clearnet', 'hybrid', 'privacy', 'networking', 'core-lightning', 'cln', 'startos']
+author: 'Nodestrich Community'
+publishedAt: '2026-11-22'
+updatedAt: '2026-11-22'
+---
+
+# Tor for Node Runners: Clearnet, Tor or Hybrid
+
+Every Lightning node has to answer one question early: how do other nodes reach it? There are three answers. **Clearnet** means your node announces a normal IP address (or DNS name). **Tor** means it announces only an `.onion` address. **Hybrid** means it announces both. This guide explains what each choice means for privacy and routing, and how to set it up on Core Lightning (CLN). For the short version, see [Tor and Your Node: FAQ](/learn/beginner/tor-faq).
+
+---
+
+## What Each Mode Means
+
+| Mode | Peers reach you via | Privacy | Routing reliability |
+|------|--------------------|---------|---------------------|
+| Clearnet | Public IP or DNS name | Your IP (and usually your location and ISP) is public in the gossip | Best: low latency, stable connections |
+| Tor only | `.onion` address | IP stays hidden | Weaker: higher latency, more dropped connections, some peers can't reach you |
+| Hybrid | Both | IP is public, the onion is an extra way in | Good: clearnet peers use clearnet, Tor-only peers can still connect |
+
+A few points that are easy to miss:
+
+- **Announcing an IP is permanent in practice.** Gossip is copied and archived by many explorers. If you announce your home IP once and switch to Tor later, the old IP stays linked to your node ID.
+- **Tor only is a fine choice for a private or small node.** If you mostly pay and receive, privacy usually matters more than a few hundred milliseconds of latency.
+- **Routing nodes usually go clearnet or hybrid.** Payments fail more often across slow or flapping Tor connections, and many large nodes prefer clearnet peers.
+- **Hybrid does not hide your IP.** It only adds a way in for peers that use Tor only. If hiding your IP is the goal, choose Tor only, or publish a VPS address instead of your home address (see Pitfalls below).
+
+---
+
+## Configuring Core Lightning
+
+CLN talks to Tor through a SOCKS proxy for outgoing connections and, optionally, through the Tor control port to create its own onion service. The options below come from the [CLN Tor guide](https://docs.corelightning.org/docs/tor) and the [`lightningd-config`](https://docs.corelightning.org/reference/lightningd-config) manual.
+
+- `proxy=127.0.0.1:9050` lets CLN connect to `.onion` peers through Tor. You can add it in every setup.
+- `always-use-proxy=true` sends **all** connections through Tor, including those to clearnet peers, and disables DNS lookups so nothing leaks.
+- `addr=statictor:127.0.0.1:9051` asks Tor (via its control port) to create a persistent onion service derived from your node key, and announces it. It must come after a `bind-addr` line, because CLN tells Tor to forward incoming onion connections to that local address.
+- `bind-addr=...` listens on an address without announcing it. `announce-addr=...` announces an address without binding to it, for example your public IP when the node sits behind a router.
+
+### Tor control port setup
+
+`addr=statictor:` talks to Tor's control port, which is off by default. Before you use any setup that announces an onion address, enable it in `/etc/tor/torrc`:
+
+```
+ControlPort 9051
+CookieAuthentication 1
+CookieAuthFileGroupReadable 1
+```
+
+Restart Tor afterwards (`systemctl restart tor`), and add the user that runs `lightningd` to the Tor group, usually `debian-tor`, so CLN can read the authentication cookie:
+
+```
+sudo usermod -a -G debian-tor yourlightninguser
+```
+
+Log out and back in (or reboot) so the group change takes effect. If you prefer a password to the cookie, run `tor --hash-password yourpassword`, put the `HashedControlPassword` line it prints into `/etc/tor/torrc`, and add `tor-service-password=yourpassword` to your CLN config.
+
+### Tor only
+
+```shell
+proxy=127.0.0.1:9050
+bind-addr=127.0.0.1:9735
+addr=statictor:127.0.0.1:9051
+always-use-proxy=true
+```
+
+Your node announces only its onion address and makes every outgoing connection through Tor.
+
+### Hybrid
+
+```shell
+proxy=127.0.0.1:9050
+bind-addr=yourInternalIPAddress:9735
+announce-addr=yourExternalIPAddress:9735
+addr=statictor:127.0.0.1:9051
+```
+
+Your node announces both addresses. Leave `always-use-proxy` off, so clearnet peers are reached directly. You also need TCP port 9735 forwarded from your router (or VPS) to the node.
+
+### Clearnet with outgoing Tor
+
+```shell
+proxy=127.0.0.1:9050
+bind-addr=yourInternalIPAddress:9735
+announce-addr=yourExternalIPAddress:9735
+```
+
+Your node announces only the IP, but can still open channels to Tor-only peers.
+
+**On StartOS** you don't edit these files by hand. Since StartOS 0.4, services are reachable on your local network by default and Tor is no longer switched on for every service automatically: you decide per service which addresses (LAN, Tor, or a public domain through a StartTunnel VPS) it should have. The Core Lightning package then announces what you enable.
+
+---
+
+## Pitfalls From Practice
+
+- **Your home IP is visible in clearnet and hybrid mode.** A common middle ground is a small VPS with a WireGuard tunnel to your node: peers see the VPS address, not your home. The trade-off is that the tunnel becomes a single point of failure. If it drops, every clearnet peer goes offline at once, so monitor it.
+- **Tor-only peers flap more.** Expect more disconnects and slower HTLCs on channels to Tor-only nodes. That is normal, but keep it in mind when you judge a channel's performance.
+- **Don't run Tor over Tor.** Pointing Tor Browser at another Tor proxy (for example the one on your node) fails: exits refuse connections into the Tor network. Use Tor Browser with its built-in Tor, and use your node's Tor proxy only for apps that have no Tor of their own, such as some wallets.
+- **Check what you actually announce.** `lightning-cli getinfo` lists the addresses your node announces under `address` and what it listens on under `binding`. If peers can't reach you, compare that with what explorers show for your node ID.
+- **A Tor relay next to your node is a separate decision.** See "Is it safe to run a Tor relay at home next to my node?" in the [FAQ](/learn/beginner/tor-faq).
+
+---
+
+## Giving Back to the Tor Network
+
+If your node uses Tor, it relies on volunteers who run the Tor network. Node runners already have what that network needs most: always-on machines and spare bandwidth. Two ways to give some of it back:
+
+- **Run a Snowflake proxy.** It shares bandwidth with people in censored countries by forwarding their traffic to a Snowflake bridge. Your proxy is not listed in any public directory and it is never an exit, so websites never see your IP and you don't get abuse complaints. The users you help do see your proxy's IP, as with any direct connection. It needs very little: a browser extension or a small standalone service is enough, and it is the low-risk way to give back from home.
+- **Run a Tor relay.** A relay carries far more traffic and strengthens the network for everyone, but its IP address, uptime and bandwidth are public. Run a non-exit (middle or guard) relay, put it on a separate VPS rather than next to your node, and back up its identity keys. Exit relays bring abuse complaints and are not something to run at home.
+
+Neither is required to run a Lightning node over Tor, but both make the network your node depends on faster and harder to block.
+
+---
+
+## Resources
+
+- [Core Lightning: Tor setup](https://docs.corelightning.org/docs/tor)
+- [Core Lightning: `lightningd-config` (address and proxy options)](https://docs.corelightning.org/reference/lightningd-config)
+- [Tor Project: onion services](https://community.torproject.org/onion-services/)
+- [Tor and Your Node: FAQ](/learn/beginner/tor-faq)

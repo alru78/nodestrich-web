@@ -1,0 +1,77 @@
+---
+title: 'Tor and Your Node: FAQ'
+description: 'Short answers to the Tor questions Lightning node runners ask most: do I need Tor, what hybrid means, why peers cannot reach my onion, and how relays, bridges and Snowflake proxies differ.'
+category: 'beginner'
+tags: ['tor', 'onion', 'faq', 'privacy', 'networking', 'snowflake', 'relay', 'bridge']
+author: 'Nodestrich Community'
+publishedAt: '2026-11-22'
+updatedAt: '2026-11-22'
+---
+
+# Tor and Your Node: FAQ
+
+Short answers to common Tor questions. For configuration details, see [Tor for Node Runners: Clearnet, Tor or Hybrid](/learn/intermediate/tor-for-node-runners).
+
+---
+
+## Do I need Tor for my Lightning node?
+
+No, but it is the easiest way to keep your home IP address out of the public Lightning gossip. If you only pay and receive, a Tor-only node is a good default. If you want to route payments, clearnet or hybrid usually works better, because Tor adds latency and more connection drops.
+
+## What does "hybrid" mean?
+
+Your node announces both a clearnet address (IP or DNS name) and an `.onion` address. Clearnet peers connect directly, Tor-only peers connect over Tor. Hybrid does **not** hide your IP; it only adds an extra way in.
+
+## Can I switch from clearnet to Tor later to hide my IP?
+
+You can switch, but the old IP stays linked to your node ID. Lightning gossip is copied and archived by many explorers. If privacy matters, decide before you announce an IP for the first time.
+
+## Why can't peers reach my node over Tor?
+
+The most common causes:
+
+- The onion service isn't announced. Check the `address` list in `lightning-cli getinfo`.
+- The onion address changed after a restart because it wasn't persistent. In Core Lightning, `addr=statictor:...` creates one derived from your node key.
+- Tor on your machine isn't running or hasn't finished bootstrapping.
+- The other side is clearnet-only and has no Tor proxy configured, so it can't dial `.onion` addresses at all.
+
+## Should my channels be with clearnet or Tor peers?
+
+Both work. Channels to Tor-only peers tend to disconnect more often and settle HTLCs a little slower. That's normal, but take it into account before you judge such a channel as a bad performer.
+
+## Can I use my node's Tor proxy in Tor Browser?
+
+Don't. Tor Browser already runs its own Tor. Pointing it at another Tor proxy means Tor over Tor, which fails. Use your node's Tor proxy only for apps that have no Tor of their own, such as some desktop wallets.
+
+## What is the difference between a Tor relay, a bridge and a Snowflake proxy?
+
+- A **relay** is a public part of the Tor network that carries other people's traffic. Its address, uptime and bandwidth are published.
+- A **bridge** is an unlisted entry point that helps users in countries where public relays are blocked.
+- A **Snowflake proxy** is a very lightweight helper that forwards traffic for censored users to a Snowflake bridge. It can run in a browser extension or as a small standalone service.
+
+All three help the Tor network. None of them is needed to run a Lightning node over Tor.
+
+## My node uses Tor. How can I give something back?
+
+Run a Snowflake proxy or a Tor relay. Your node already runs around the clock, and most node runners have spare bandwidth.
+
+- A **Snowflake proxy** is the easy, low-risk option: it only shares bandwidth with censored users, it isn't listed publicly and it is never an exit, so websites never see your IP. It is fine to run at home.
+- A **Tor relay** helps more, but its IP and uptime are public. Run a non-exit relay on a separate VPS, not next to your node (see the next question).
+
+## Is it safe to run a Tor relay at home next to my node?
+
+It is better not to. A relay's uptime and other properties are public, and the Tor Project advises against hosting onion services on a relay for that reason. If your relay and your node share the same internet line or power, their outages line up, and an observer can link your relay's public IP to your node's onion address. A small VPS is the safer place for a relay. A Snowflake proxy is much less exposed, because it isn't listed publicly.
+
+## Does running a relay or bridge put my node at risk?
+
+On a separate VPS: not directly. Keep identities apart: don't reuse the relay server for your node, and don't run two copies of the same relay identity at once. Back up the relay's identity keys, because a new identity starts with no reputation and loses its flags.
+
+---
+
+## Resources
+
+- [Tor for Node Runners: Clearnet, Tor or Hybrid](/learn/intermediate/tor-for-node-runners)
+- [Tor Project: Types of relays](https://community.torproject.org/relay/types-of-relays/)
+- [Tor Project: Onion service operational security](https://community.torproject.org/onion-services/advanced/opsec/)
+- [Tor Project: Snowflake](https://snowflake.torproject.org/)
+- [Core Lightning: Tor setup](https://docs.corelightning.org/docs/tor)
