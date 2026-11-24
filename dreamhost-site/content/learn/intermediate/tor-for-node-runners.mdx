@@ -37,8 +37,26 @@ CLN talks to Tor through a SOCKS proxy for outgoing connections and, optionally,
 
 - `proxy=127.0.0.1:9050` lets CLN connect to `.onion` peers through Tor. You can add it in every setup.
 - `always-use-proxy=true` sends **all** connections through Tor, including those to clearnet peers, and disables DNS lookups so nothing leaks.
-- `addr=statictor:127.0.0.1:9051` asks Tor (via its control port) to create a persistent onion service derived from your node key, and announces it.
+- `addr=statictor:127.0.0.1:9051` asks Tor (via its control port) to create a persistent onion service derived from your node key, and announces it. It must come after a `bind-addr` line, because CLN tells Tor to forward incoming onion connections to that local address.
 - `bind-addr=...` listens on an address without announcing it. `announce-addr=...` announces an address without binding to it, for example your public IP when the node sits behind a router.
+
+### Tor control port setup
+
+`addr=statictor:` talks to Tor's control port, which is off by default. Before you use any setup that announces an onion address, enable it in `/etc/tor/torrc`:
+
+```
+ControlPort 9051
+CookieAuthentication 1
+CookieAuthFileGroupReadable 1
+```
+
+Restart Tor afterwards (`systemctl restart tor`), and add the user that runs `lightningd` to the Tor group, usually `debian-tor`, so CLN can read the authentication cookie:
+
+```
+sudo usermod -a -G debian-tor yourlightninguser
+```
+
+Log out and back in (or reboot) so the group change takes effect. If you prefer a password to the cookie, run `tor --hash-password yourpassword`, put the `HashedControlPassword` line it prints into `/etc/tor/torrc`, and add `tor-service-password=yourpassword` to your CLN config.
 
 ### Tor only
 
