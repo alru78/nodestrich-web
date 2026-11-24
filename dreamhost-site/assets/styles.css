@@ -1476,6 +1476,17 @@ body { isolation: isolate; }
 
 .member-directory select option { background: #160b26; }
 
+/* Pill select: drop the native arrow, which hugs the rounded edge, for a chevron inset from it. */
+.member-directory select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 10px 44px 10px 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%23f7f3ff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 20px center;
+  background-size: 12px 8px;
+}
+
 .search-box input::placeholder,
 .member-directory input::placeholder,
 .tool-panel input::placeholder,
