@@ -4,7 +4,10 @@ declare(strict_types=1);
 // These files are loaded by app/bootstrap.php; refuse a direct request for them.
 defined('ROOT_PATH') || exit;
 
-function render_layout(string $title, string $description, string $content, string $currentPath): void
+/**
+ * $meta may carry 'image' (absolute og:image URL) and 'type' (og:type) to override the site defaults.
+ */
+function render_layout(string $title, string $description, string $content, string $currentPath, array $meta = []): void
 {
     $navItems = [
         '/' => 'Dashboard',
@@ -16,6 +19,9 @@ function render_layout(string $title, string $description, string $content, stri
 
     $fullTitle = str_contains($title, 'Nodestrich') ? $title : $title . ' - Nodestrich';
     $siteUrl = rtrim((string) app_config('site_url'), '/');
+    $ogImage = (string) ($meta['image'] ?? $siteUrl . '/social_preview.jpg?v=2');
+    $ogType = (string) ($meta['type'] ?? 'website');
+    $ogHasSize = isset($meta['image']);
     ?>
 <!doctype html>
 <html lang="en">
@@ -26,13 +32,17 @@ function render_layout(string $title, string $description, string $content, stri
   <meta name="description" content="<?= e($description) ?>">
   <meta property="og:title" content="<?= e($fullTitle) ?>">
   <meta property="og:description" content="<?= e($description) ?>">
-  <meta property="og:image" content="<?= e($siteUrl) ?>/social_preview.jpg?v=2">
+  <meta property="og:image" content="<?= e($ogImage) ?>">
+<?php if ($ogHasSize): ?>
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+<?php endif; ?>
   <meta property="og:url" content="<?= e($siteUrl . $currentPath) ?>">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="<?= e($ogType) ?>">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="<?= e($fullTitle) ?>">
   <meta name="twitter:description" content="<?= e($description) ?>">
-  <meta name="twitter:image" content="<?= e($siteUrl) ?>/social_preview.jpg?v=2">
+  <meta name="twitter:image" content="<?= e($ogImage) ?>">
   <link rel="icon" type="image/svg+xml" href="<?= asset('favicon.svg') ?>">
   <link rel="icon" type="image/png" sizes="96x96" href="<?= asset('favicon-96x96.png') ?>">
   <link rel="icon" href="<?= asset('favicon.ico') ?>">

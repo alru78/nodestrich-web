@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><style>
+@font-face{font-family:Inter;font-weight:500;src:url(../../dreamhost-site/assets/social/Inter-Medium.ttf)}
+@font-face{font-family:Inter;font-weight:600;src:url(../../dreamhost-site/assets/social/Inter-SemiBold.ttf)}
+@font-face{font-family:Inter;font-weight:800;src:url(../../dreamhost-site/assets/social/Inter-ExtraBold.ttf)}
+:root{--w:1200px;--h:630px}
+.copy{position:absolute;left:72px;right:72px;top:0;bottom:0;display:flex;flex-direction:column;padding:64px 0 56px}
+.pill{font-size:16px;padding:10px 18px;align-self:flex-start}
+.pill .sep{opacity:.45;margin:0 -2px}
+.pill::before{background:#ff4fd8;box-shadow:0 0 10px #ff4fd8}
+h1{font-size:84px;line-height:1.0;padding-bottom:.16em;margin-bottom:-.16em;letter-spacing:-.035em;font-weight:800;max-width:1060px}
+.tags{display:flex;gap:12px;margin-top:36px}
+.tag{font-size:20px;font-weight:500;color:#ebe0f8;padding:8px 18px;border-radius:999px;border:1px solid rgb(255 255 255 / .16);background:rgb(255 255 255 / .06)}
+.tag b{color:#ff9cec;font-weight:600;margin-right:2px}
+.foot{display:flex;justify-content:space-between;align-items:flex-end;gap:32px;margin-top:24px}
+.foot img{height:40px;display:block}
+.url{font-size:24px;font-weight:500;color:#a891c9;letter-spacing:-.005em;line-height:1;white-space:nowrap;text-align:right;transform:translateY(3px)}
+.url b{color:#ebe0f8;font-weight:500}
+.body{display:flex;flex-direction:column;flex:1;justify-content:center;padding-bottom:8px}
+</style></head><body><div class="stage">
+<div class="aurora">
+ <i style="width:720px;height:720px;left:-260px;top:-380px;background:#f800c1;opacity:.5"></i>
+ <i style="width:560px;height:560px;right:-170px;top:-190px;background:#5b21ff;opacity:.55"></i>
+ <i style="width:520px;height:520px;right:60px;bottom:-400px;background:#00e5ff;opacity:.26"></i>
+</div><div class="vignette"></div><div class="grain"></div>
+<span class="spark m" style="left:1118px;top:84px"></span>
+<span class="spark c" style="left:1000px;top:452px"></span>
+<div class="copy">
+ <div class="pill" id="pill"></div>
+ <div class="body">
+  <h1 class="grad" id="title"></h1>
+  <div class="tags" id="tags"></div>
+ </div>
+ <div class="foot"><img src="nodestrich_logo_white.svg" alt=""><div class="url" id="url"></div></div>
+</div>
+</div>
+<script>
+const p=new URLSearchParams(location.search);
+if(p.has('bg'))document.querySelector('.copy').style.display='none';
+if(p.has('bg'))throw 0;
+document.getElementById('pill').innerHTML='Learn <span class="sep">·</span> '+p.get('cat');
+document.getElementById('url').innerHTML='nodestrich.com<b>'+p.get('route')+'</b>';
+document.getElementById('title').textContent=p.get('title');
+document.getElementById('tags').innerHTML=p.get('tags').split(',').map(t=>'<span class="tag"><b>#</b> '+t+'</span>').join('');
+</script></body></html>

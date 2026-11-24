@@ -10,5 +10,6 @@ require APP_PATH . '/helpers.php';
 require APP_PATH . '/content.php';
 require APP_PATH . '/data.php';
 require APP_PATH . '/api.php';
+require APP_PATH . '/social-card.php';
 require APP_PATH . '/pages.php';
 require APP_PATH . '/layout.php';

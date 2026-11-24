@@ -467,6 +467,7 @@ function render_article_route(string $slug): array
         $article['title'],
         $article['description'],
         (string) ob_get_clean(),
+        ['image' => social_card_url($article), 'type' => 'article'],
     ];
 }
 
