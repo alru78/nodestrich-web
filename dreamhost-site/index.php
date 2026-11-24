@@ -19,6 +19,11 @@ try {
         exit;
     }
 
+    if (preg_match('#^/social/learn/((?:beginner|intermediate|advanced)/[a-z0-9-]+)\.jpg$#', $path, $card) === 1) {
+        handle_social_card($card[1]);
+        exit;
+    }
+
     if ($path === '/signal') {
         handle_signal_redirect();
         exit;
@@ -29,8 +34,9 @@ try {
         exit;
     }
 
-    [$title, $description, $content] = route_page($path);
-    render_layout($title, $description, $content, $path);
+    $page = route_page($path);
+    [$title, $description, $content] = $page;
+    render_layout($title, $description, $content, $path, $page[3] ?? []);
 } catch (Throwable $exception) {
     error_log($exception->getMessage());
     http_response_code(500);
